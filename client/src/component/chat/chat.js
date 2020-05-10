@@ -2,9 +2,16 @@ import React, {useState,useEffect} from 'react';
 
 import queryString from 'query-string';
 import io from 'socket.io-client';
-
+import InfoBar from '../infobar/infobar';
+import Input from '../input/Input';
+import Messages from  '../messages/messages';
+import './chat.css';
 let socket;
 const Chat = ({location}) => {
+    const [message,setMessage] = useState('');
+    const [messages,setMessages] = useState([]);
+
+
     let ENDPOINT = 'localhost:5000';
 
     const [name,setName] = useState('');
@@ -24,8 +31,8 @@ const Chat = ({location}) => {
         setName(name);
         setRoom(room);
         // A event is emiited with these 2 vaues getting passed as object
-        socket.emit('join',{name,room},() => {
-
+        socket.emit('join',{name,room},(error) => {
+          
         });
         // console.log(socket);
         // return as a function in hooks
@@ -39,8 +46,43 @@ const Chat = ({location}) => {
 
     },[ENDPOINT,location.search])
 
+
+    // Handling messages
+
+    useEffect(() => {
+        socket.on('message',(message) => {
+            // add the messages within setMessage array
+            setMessages([...messages,message]); 
+        })
+    },[messages])
+
+    // function for sending the message
+    const sendMessage = (event) => {
+        event.preventDefault(); 
+        // console.log(event);
+        if(message) {
+            
+            socket.emit('sendMessage',message,() => {
+                setMessage('');
+            });
+        }
+    }
+    console.log({message,messages});
     return ( 
-        <h1>Chat</h1>   
+       <div className='outerContainer'>
+            <div className='container'>
+            <InfoBar room={room}/>
+            <Messages 
+            messages  = {messages}
+            name={name}
+            />
+               <Input
+                message={message}
+                setMessage={setMessage}
+                sendMessage={sendMessage}
+               />
+            </div>
+       </div>
     )
 }
 export default Chat;
